@@ -17,6 +17,8 @@
       })
   *
   */
+
+  // TIMEUPDATE, PLAY, PAUSE
 (function ( Popcorn, global ) {
   var PLAYER_URL = "http://popcornjs.org/code/modules/player/popcorn.player.js",
       urlRegex = /(?:http:\/\/www\.|http:\/\/|www\.|\.|^)(youtu)/,
@@ -61,11 +63,11 @@
           type: "number",
           label: "End"
         },
-        autoplay: {
+        starttime: {
           elem: "input",
-          type: "checkbox",
-          label: "Autoplay Video",
-          optional: true
+          type: "number",
+          label: "Start Time",
+          "default": 5
         },
         width: {
           elem: "input",
@@ -73,7 +75,8 @@
           label: "Media Width",
           "default": 40,
           units: "%",
-          optional: true
+          optional: true,
+          hidden: true
         },
         height: {
           elem: "input",
@@ -81,7 +84,8 @@
           label: "Media Height",
           "default": 40,
           units: "%",
-          optional: true
+          optional: true,
+          hidden: true
         },
         top: {
           elem: "input",
@@ -89,7 +93,8 @@
           label: "Media Top",
           "default": 5,
           units: "%",
-          optional: true
+          optional: true,
+          hidden: true
         },
         left: {
           elem: "input",
@@ -97,7 +102,8 @@
           label: "Media Left",
           "default": 5,
           units: "%",
-          optional: true
+          optional: true,
+          hidden: true
         },
         zindex: {
           hidden: true
@@ -141,6 +147,7 @@
       options.height = options.height || 20;
       options.top = options.top || 5;
       options.left = options.left || 5;
+      options.starttime = options.starttime || 0;
       container.style.width = options.width + "%";
       container.style.height = options.height + "%";
       container.style.top = options.top + "%";
@@ -208,9 +215,19 @@
         options._container.style.display = "block";
       }
 
-      if ( options.popcorn ) {
-        options.popcorn.play();
+      function doStuff() {
+        if ( options.popcorn && options.popcorn.media.readyState === 4 ) {
+          options.popcorn.play();
+          options.popcorn.currentTime( options.starttime );
+        } else {
+          setTimeout(function() {
+            doStuff();
+          }, 100 );
+        }
       }
+
+      doStuff();
+
     },
     end: function( event, options ) {
 
