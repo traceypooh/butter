@@ -51,7 +51,7 @@
           elem: "input",
           type: "text",
           label: "Media Source",
-          "default": "http://www.youtube.com/watch?v=CXDstfD9eJ0"
+          "default": "http://www.youtube.com/watch?v=31g0YE61PLQ"
         },
         start: {
           elem: "input",
@@ -67,7 +67,7 @@
           elem: "input",
           type: "number",
           label: "Start Time",
-          "default": 5
+          "default": 2
         },
         width: {
           elem: "input",
@@ -107,6 +107,18 @@
         },
         zindex: {
           hidden: true
+        },
+        muteMedia: {
+          elem: "input",
+          type: "checkbox",
+          label: "Mute Main Media",
+          "default": false
+        },
+        muteSource: {
+          elem: "input",
+          type: "checkbox",
+          label: "Mute Source Media",
+          "default": false
         }
       }
     },
@@ -277,6 +289,14 @@
           if ( !_this.paused() ) {
             pop.play();
           }
+
+          if ( options.muteSource ) {
+            pop.mute();
+          }
+
+          if ( options.muteMedia ) {
+            _this.mute( true );
+          }
         } else {
           setTimeout(function() {
             doStuff();
@@ -288,7 +308,8 @@
 
     },
     end: function( event, options ) {
-      var _this = this;
+      var _this = this,
+          pop = options.popcorn;
 
       _this.off( "seeked", options._seekedEvent );
       _this.off( "timeupdate", options._timeUpdateEvent );
@@ -303,8 +324,14 @@
         options._container.style.overflow = "hidden";
       }
 
-      // Pause all popcorn instances on exit
-      options.popcorn.pause();
+      if ( pop ) {
+        if ( options.muteMedia ) {
+          _this.mute( false );
+        }
+
+        // Stop the media
+        pop.pause();
+      }
 
     },
     _teardown: function( options ) {

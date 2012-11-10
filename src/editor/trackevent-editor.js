@@ -363,7 +363,7 @@ define([ "util/lang", "util/keys", "util/time", "./base-editor", "ui/widget/tool
       element.addEventListener( "click", function( e ) {
         var updateOptions = {};
         updateOptions[ propertyName ] = element.checked;
-        callBack( trackEvent, propertyName, updateOptions );
+        callBack( trackEvent, updateOptions, propertyName );
       }, false );
     };
 
