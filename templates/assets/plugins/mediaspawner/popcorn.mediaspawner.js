@@ -150,6 +150,7 @@
       options._container = document.createElement( "div" );
       container = options._container;
       container.id = "mediaSpawnerdiv-" + Popcorn.guid();
+      container.classList.add( "media-spawner" );
       container.style.position = "absolute";
       container.style.zIndex = +options.zindex;
 
