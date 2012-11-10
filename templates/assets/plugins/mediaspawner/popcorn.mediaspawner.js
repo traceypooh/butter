@@ -139,7 +139,6 @@
       container = options._container;
       container.id = "mediaSpawnerdiv-" + Popcorn.guid();
       container.style.position = "absolute";
-      container.style.display = "none";
       container.style.zIndex = +options.zindex;
 
       // Default width and height of media
@@ -164,11 +163,17 @@
             }, 300 );
           } else {
             options.id = options._container.id;
-            options.popcorn = Popcorn.smart( "#" + options.id, options.source );
+            options.popcorn = Popcorn.smart( "#" + options.id, options.source, { controls: true } );
 
             if ( mediaType === "HTML5" ) {
               options.popcorn.controls( true );
             }
+
+            // Set them to 0 now so it is hidden
+            options._container.style.width = "0%";
+            options._container.style.height = "0%";
+            options._container.style.visibility = "hidden";
+            options._container.style.overflow = "hidden";
           }
         }
 
@@ -208,17 +213,70 @@
       };
     },
     start: function( event, options ) {
+      var pop = options.popcorn,
+          firstPause = true,
+          firstSeek = true,
+          _this = this;
 
-      this.media.pause();
+
+      function setTime() {
+        var end = options.end,
+            mediaCurrentTime = _this.currentTime(),
+            newTime,
+            mediaStart = options.starttime - 0.25,
+            timeIn = mediaCurrentTime / end;
+
+        newTime = end * timeIn;
+        newTime += mediaStart;
+        newTime = newTime < mediaStart ? mediaStart : newTime;
+        pop.currentTime( newTime );
+      }
+
+      options._timeUpdateEvent = function( e ) {
+        if ( pop  && !firstPause ) {
+          setTime();
+          firstPause = true;
+        }
+      };
+
+      options._seekedEvent = function( e ) {
+        if ( pop && !firstSeek ) {
+          setTime();
+        } else {
+          firstSeek = false;
+        }
+      };
+
+      options._pausedEvent = function( e ) {
+        pop.pause();
+        firstPause = !firstPause;
+      };
+
+      options._playedEvent = function( e ) {
+        pop.play();
+      };
+
+      _this.on( "seeked", options._seekedEvent );
+      _this.on( "timeupdate", options._timeUpdateEvent );
+      _this.on( "play", options._playedEvent );
+      _this.on( "pause", options._pausedEvent );
 
       if ( options._container ) {
-        options._container.style.display = "block";
+        options._container.style.width = options.width + "%";
+        options._container.style.height = options.height + "%";
+        options._container.style.visibility = "visible";
+        options._container.style.overflow = "visible";
       }
 
       function doStuff() {
-        if ( options.popcorn && options.popcorn.media.readyState === 4 ) {
-          options.popcorn.play();
-          options.popcorn.currentTime( options.starttime );
+        pop = options.popcorn;
+
+        if ( pop && pop.media.readyState === 4 ) {
+          pop.currentTime( options.starttime );
+
+          if ( !_this.paused() ) {
+            pop.play();
+          }
         } else {
           setTimeout(function() {
             doStuff();
@@ -230,9 +288,19 @@
 
     },
     end: function( event, options ) {
+      var _this = this;
+
+      _this.off( "seeked", options._seekedEvent );
+      _this.off( "timeupdate", options._timeUpdateEvent );
+      _this.off( "play", options._playedEvent );
+      _this.off( "pause", options._pausedEvent );
 
       if ( options._container ) {
-        options._container.style.display = "none";
+        // Set them to 0 now so it is hidden
+        options._container.style.width = "0%";
+        options._container.style.height = "0%";
+        options._container.style.visibility = "hidden";
+        options._container.style.overflow = "hidden";
       }
 
       // Pause all popcorn instances on exit

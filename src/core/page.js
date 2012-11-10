@@ -77,6 +77,13 @@ define( [ "core/logger", "core/eventmanager" ], function( Logger, EventManager )
           check: function(){
             return !!window.Popcorn && !!window.Popcorn.HTMLNullVideoElement;
           }
+        },
+        {
+          type: "js",
+          url: "{popcorn-js}/players/youtube/popcorn.youtube.js",
+          check: function(){
+            return !!window.Popcorn && !!window.Popcorn.youtube;
+          }
         }
 
       ], readyCallback, null, true );
