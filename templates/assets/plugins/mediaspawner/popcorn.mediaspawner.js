@@ -22,6 +22,7 @@
 (function ( Popcorn, global ) {
   var PLAYER_URL = "http://popcornjs.org/code/modules/player/popcorn.player.js",
       urlRegex = /(?:http:\/\/www\.|http:\/\/|www\.|\.|^)(youtu)/,
+      urlRegexIA = /archive\.org\/(details)\/([^\/\#\?]+)[\?\#]*(.+)$/,
       forEachPlayer,
       playerTypeLoading = {},
       playerTypesLoaded = {
@@ -128,6 +129,17 @@
           container,
           regexResult;
 
+      function createAttribution( data ) {
+        var attributionContainer = document.createElement( "div" ),
+            anchor = document.createElement( "a" );
+        attributionContainer.classList.add( "media-spawner-attribution" );
+        anchor.href = data.url;
+        anchor.innerHTML = data.name;
+        attributionContainer.addEventListener( "click", onAttributionClick, false );
+        attributionContainer.appendChild( anchor );
+        container.appendChild( attributionContainer );
+      }
+
       regexResult = urlRegex.exec( options.source );
       if ( regexResult ) {
         mediaType = regexResult[ 1 ];
@@ -137,14 +149,56 @@
         }
       }
       else {
-        // if the regex didn't return anything we know it's an HTML5 source
-        mediaType = "HTML5";
+        regexResult = urlRegexIA.exec( options.source );
+        if ( regexResult ) {
+          mediaType = "HTML5";
+
+          var iaid = regexResult[ 2 ];
+          var startend = '';
+          if ( regexResult.length == 4 ) {
+            var qs   = regexResult[ 3 ];
+            var start=0, end=0;
+            var tmp = qs.match(/start[\/=]([\d\.]+)/);
+            if (tmp  &&  tmp.length==2)
+              start=tmp[1];
+            tmp = qs.match(/end[\/=]([\d\.]+)/);
+            if (tmp  &&  tmp.length==2)
+              end=tmp[1];
+            if (start  ||  end){
+              startend = '?start='+start + (end ? '&end='+end : '');
+            }
+          }
+
+          // for TV archive -- switch the /details/ page url to the download .mp4
+          var origUrl = options.source;
+          options.source = 'http://archive.org/download/'+iaid+'/'+iaid+'.mp4' + startend;
+
+          // Get the item metadata from archive.org for the given item/identifier.
+          // This allows us to find the best video/audio file to play!
+          // When we have the JSON in hand, call "init()".
+          var metaurl="http://archive.org/metadata/"+iaid+"?&callback=jsonp";
+          Popcorn.getJSONP( metaurl, function( itemMetadata ){
+            createAttribution({
+              //eg: "PBS NewsHour : KQEH : October 24, 2012 12:00am-1:00am PDT"
+              name : itemMetadata.metadata.title,
+              url : origUrl
+            });
+          });
+        }
+        else {
+          // if the regex didn't return anything we know it's an HTML5 source
+          mediaType = "HTML5";
+        }
       }
 
       // Store Reference to Type for use in end
       options._type = mediaType;
 
       options._target = target = Popcorn.dom.find( options.target );
+
+      function onAttributionClick() {
+        this.classList.toggle( "on" );
+      }
 
       // Create separate container for plugin
       options._container = document.createElement( "div" );
@@ -166,6 +220,7 @@
       container.style.left = options.left + "%";
 
       target && target.appendChild( container );
+
 
       function constructMedia(){
 
