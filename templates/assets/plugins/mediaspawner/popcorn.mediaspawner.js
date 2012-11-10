@@ -134,6 +134,7 @@
             anchor = document.createElement( "a" );
         attributionContainer.classList.add( "media-spawner-attribution" );
         anchor.href = data.url;
+        anchor.setAttribute( "target", "_blank" );
         anchor.innerHTML = data.name;
         attributionContainer.addEventListener( "click", onAttributionClick, false );
         attributionContainer.appendChild( anchor );
